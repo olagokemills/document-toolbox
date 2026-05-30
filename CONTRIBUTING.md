@@ -77,4 +77,4 @@ All PDF processing logic lives in `packages/pdf-core/src/`. Each tool is a pure 
 
 ## Reporting bugs and requesting features
 
-Use the [GitHub issue templates](https://github.com/OWNER/REPO/issues/new/choose).
+Use the [GitHub issue templates](https://github.com/olagokemills/document-toolbox/issues/new/choose).
