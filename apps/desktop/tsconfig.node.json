@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "electron.vite.config.*",
+    "src/main/**/*",
+    "src/preload/**/*"
+  ],
+  "compilerOptions": {
+    "lib": ["ES2020"],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "out",
+    "paths": {
+      "@private-pdf/pdf-core": ["../../packages/pdf-core/src/index.ts"],
+      "@private-pdf/shared-types": ["../../packages/shared-types/src/index.ts"]
+    }
+  }
+}

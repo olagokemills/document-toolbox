@@ -34,7 +34,7 @@ export default function DeletePagesPage() {
   function toggle(n: number) {
     setSelected((prev) => {
       const next = new Set(prev)
-      next.has(n) ? next.delete(n) : next.add(n)
+      if (next.has(n)) { next.delete(n) } else { next.add(n) }
       return next
     })
   }

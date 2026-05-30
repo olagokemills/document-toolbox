@@ -4,11 +4,18 @@
   "scripts": {
     "dev:web": "pnpm --filter local-web dev",
     "build:web": "pnpm --filter local-web build",
+    "dev:desktop": "pnpm --filter @private-pdf/desktop dev",
+    "build:desktop": "pnpm --filter @private-pdf/desktop build",
+    "package:desktop": "pnpm --filter @private-pdf/desktop package",
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "eslint": "^10.4.1",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "typescript": "^5.4.0",
+    "typescript-eslint": "^8.60.0"
   }
 }

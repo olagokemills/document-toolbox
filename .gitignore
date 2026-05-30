@@ -9,3 +9,7 @@ out
 .DS_Store
 .cache
 *.log
+release
+apps/desktop/dist
+idea.md
+AGENTS.MD

@@ -1,0 +1,41 @@
+.zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+  outline: none;
+}
+
+.zone:hover,
+.zone:focus-visible {
+  border-color: var(--tool-color, #6b7280);
+  background: color-mix(in srgb, var(--tool-color, #6b7280) 4%, white);
+}
+
+.dragging {
+  border-color: var(--tool-color, #6b7280);
+  background: color-mix(in srgb, var(--tool-color, #6b7280) 8%, white);
+}
+
+.icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
