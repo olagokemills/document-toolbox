@@ -2,6 +2,8 @@
   "name": "@private-pdf/desktop",
   "version": "0.0.1",
   "private": true,
+  "description": "PrivatePDF – offline PDF tools for your desktop",
+  "author": "PrivatePDF",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
