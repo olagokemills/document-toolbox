@@ -7,17 +7,16 @@ directories:
 
 files:
   - out/**/*
-  - node_modules/**/*
   - package.json
 
 npmRebuild: false
 
 mac:
   category: public.app-category.productivity
-  artifactName: PrivatePDF-${arch}.${ext}
+  artifactName: PrivatePDF.${ext}
   target:
     - target: dmg
-      arch: [x64, arm64]
+      arch: [universal]
   darkModeSupport: true
 
 win:

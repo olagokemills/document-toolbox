@@ -1,10 +1,21 @@
 import { resolve } from 'path'
+import { builtinModules } from 'module'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
 
+const nodeExternals = [
+  'electron',
+  ...builtinModules,
+  ...builtinModules.map((m) => `node:${m}`),
+]
+
 export default defineConfig({
   main: {
-    plugins: [externalizeDepsPlugin()],
+    build: {
+      rollupOptions: {
+        external: nodeExternals,
+      },
+    },
     resolve: {
       alias: {
         '@private-pdf/pdf-core': resolve('../../packages/pdf-core/src/index.ts'),
