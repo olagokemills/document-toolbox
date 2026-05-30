@@ -104,3 +104,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, branch model, and PR guide
 ## License
 
 MIT
+Made with love for all
