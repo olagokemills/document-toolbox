@@ -1,0 +1,92 @@
+.link {
+  display: block;
+  border-radius: var(--radius);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--tool-color, #6366f1);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.1rem 1.1rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.link:hover .card {
+  border-color: var(--tool-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.topBar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--tool-color);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.unavailable .topBar {
+  opacity: 0.35;
+}
+
+.iconWrap {
+  color: var(--tool-color);
+  margin-bottom: 0.25rem;
+  display: flex;
+}
+
+.unavailable .iconWrap {
+  opacity: 0.4;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  letter-spacing: -0.01em;
+}
+
+.description {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  flex: 1;
+}
+
+.action {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--tool-color);
+  margin-top: 0.25rem;
+  display: inline-block;
+}
+
+.soon {
+  font-size: 0.7rem;
+  color: var(--color-text-tertiary);
+  margin-top: 0.25rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.unavailable {
+  cursor: default;
+}
+
+.unavailable .title,
+.unavailable .description {
+  opacity: 0.55;
+}

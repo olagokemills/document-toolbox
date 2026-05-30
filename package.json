@@ -1,0 +1,14 @@
+{
+  "name": "private-pdf-local",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm --filter local-web dev",
+    "build:web": "pnpm --filter local-web build",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  }
+}

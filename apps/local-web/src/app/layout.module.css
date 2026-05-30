@@ -1,0 +1,114 @@
+/* ── Blob atmosphere ─────────────────────────────────────── */
+
+.blobTopLeft,
+.blobTopRight,
+.blobBottomRight,
+.blobBottomLeft {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.08;
+  filter: blur(90px);
+  z-index: 0;
+  will-change: transform;
+}
+
+.blobTopLeft {
+  width: 520px;
+  height: 520px;
+  background: #e8445a;
+  top: -180px;
+  left: -180px;
+}
+
+.blobTopRight {
+  width: 480px;
+  height: 480px;
+  background: #8a5ae8;
+  top: -160px;
+  right: -160px;
+}
+
+.blobBottomRight {
+  width: 560px;
+  height: 560px;
+  background: #0eadb0;
+  bottom: -200px;
+  right: -200px;
+}
+
+.blobBottomLeft {
+  width: 440px;
+  height: 440px;
+  background: #e89a2a;
+  bottom: -160px;
+  left: -140px;
+}
+
+/* ── Layout shell ────────────────────────────────────────── */
+
+.header {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.headerInner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: -0.02em;
+}
+
+.wordmarkSuffix {
+  font-weight: 400;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.footer {
+  max-width: 1080px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+  border-top: 1px solid var(--color-border);
+}
+
+.footer a {
+  color: var(--color-text-secondary);
+  transition: color 0.1s;
+}
+
+.footer a:hover {
+  color: var(--color-text);
+}
