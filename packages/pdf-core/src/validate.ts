@@ -1,7 +1,5 @@
 import {
   FILE_LIMITS,
-  ACCEPTED_IMAGE_EXTENSIONS,
-  ACCEPTED_IMAGE_TYPES,
   type SafeOperationError,
   type PdfInputFile,
   type ImageInputFile,
@@ -57,17 +55,19 @@ export function validatePdfInput(file: PdfInputFile): SafeOperationError | null 
 }
 
 export function validateImageInput(file: ImageInputFile): SafeOperationError | null {
+  const acceptedExtensions = ['.jpg', '.jpeg', '.png'] as const
+  const acceptedTypes = ['image/jpeg', 'image/png'] as const
   const ext = '.' + file.fileName.split('.').pop()?.toLowerCase()
-  if (!ACCEPTED_IMAGE_EXTENSIONS.includes(ext as typeof ACCEPTED_IMAGE_EXTENSIONS[number])) {
+  if (!acceptedExtensions.includes(ext as typeof acceptedExtensions[number])) {
     return {
       code: 'INVALID_FILE_TYPE',
       userMessage:
         'Only JPG and PNG images are accepted.',
-      developerMessage: `Image extension was "${ext}", expected one of ${ACCEPTED_IMAGE_EXTENSIONS.join(', ')}`,
+      developerMessage: `Image extension was "${ext}", expected one of ${acceptedExtensions.join(', ')}`,
     }
   }
 
-  if (!ACCEPTED_IMAGE_TYPES.includes(file.mimeType as typeof ACCEPTED_IMAGE_TYPES[number])) {
+  if (!acceptedTypes.includes(file.mimeType as typeof acceptedTypes[number])) {
     return {
       code: 'INVALID_FILE_TYPE',
       userMessage: 'Only JPG and PNG images are accepted.',
@@ -107,6 +107,18 @@ export function validatePageRange(
       code: 'INVALID_PAGE_RANGE',
       userMessage: `Page ${end} does not exist. This PDF has ${totalPages} page${totalPages === 1 ? '' : 's'}.`,
       developerMessage: `Range end ${end} exceeds total pages ${totalPages}`,
+    }
+  }
+  return null
+}
+
+export function validatePdfPageCount(totalPages: number): SafeOperationError | null {
+  if (totalPages > FILE_LIMITS.maxPdfPageCount) {
+    return {
+      code: 'FILE_TOO_LARGE',
+      userMessage:
+        'This file is too large for the current version. Try a smaller PDF or split the document first.',
+      developerMessage: `PDF page count ${totalPages} exceeds limit ${FILE_LIMITS.maxPdfPageCount}`,
     }
   }
   return null

@@ -1,5 +1,6 @@
 import { deletePdfPages } from '@private-pdf/pdf-core'
 import type { PdfInputFile } from '@private-pdf/shared-types'
+import { uploadErrorResponse, validatePdfUpload } from '@/lib/uploadValidation'
 
 export async function POST(req: Request) {
   try {
@@ -10,6 +11,8 @@ export async function POST(req: Request) {
     if (!(file instanceof File)) {
       return Response.json({ error: 'Please select a PDF file.' }, { status: 400 })
     }
+    const uploadError = validatePdfUpload(file)
+    if (uploadError) return uploadErrorResponse(uploadError)
 
     const pagesToDelete = pagesRaw
       .split(',')

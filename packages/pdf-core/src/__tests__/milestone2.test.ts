@@ -44,6 +44,17 @@ describe('reorderPdfPages', () => {
     expect(result.error?.code).toBe('INVALID_PAGE_RANGE')
   })
 
+  it('rejects an incomplete or duplicate page order', async () => {
+    const input = await makePdf(3)
+    const incomplete = await reorderPdfPages(input, { pageOrder: [1] })
+    const duplicate = await reorderPdfPages(input, { pageOrder: [1, 1, 2] })
+
+    expect(incomplete.status).toBe('error')
+    expect(incomplete.error?.code).toBe('INVALID_PAGE_RANGE')
+    expect(duplicate.status).toBe('error')
+    expect(duplicate.error?.code).toBe('INVALID_PAGE_RANGE')
+  })
+
   it('rejects empty order', async () => {
     const input = await makePdf(2)
     const result = await reorderPdfPages(input, { pageOrder: [] })
@@ -90,6 +101,14 @@ describe('deletePdfPages', () => {
 
     expect(result.status).toBe('error')
     expect(result.error?.code).toBe('NO_PAGES_SELECTED')
+  })
+
+  it('rejects nonexistent pages', async () => {
+    const input = await makePdf(2)
+    const result = await deletePdfPages(input, { pagesToDelete: [3] })
+
+    expect(result.status).toBe('error')
+    expect(result.error?.code).toBe('INVALID_PAGE_RANGE')
   })
 
   it('rejects invalid PDF', async () => {

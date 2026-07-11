@@ -1,7 +1,7 @@
 import { PDFDocument, rgb, degrees, type RGB } from 'pdf-lib'
 import { FILE_LIMITS } from '@private-pdf/shared-types'
 import type { PdfInputFile, PdfOperationResult, WatermarkOptions } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function addTextWatermark(
   inputFile: PdfInputFile,
@@ -42,6 +42,8 @@ export async function addTextWatermark(
     }
 
     const totalPages = doc.getPageCount()
+    const pageCountErr = validatePdfPageCount(totalPages)
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
     const allPages = doc.getPages()
 
     // Resolve which pages to watermark

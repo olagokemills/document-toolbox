@@ -23,6 +23,20 @@ export async function POST(req: Request) {
       )
     }
 
+    const validPageSizes: ImagePageSize[] = ['fit', 'a4-portrait', 'a4-landscape']
+    if (!validPageSizes.includes(pageSize)) {
+      return Response.json({ error: 'Please select a valid page size.' }, { status: 400 })
+    }
+
+    const oversized = files.find((file) => file.size > FILE_LIMITS.maxSingleImageSizeBytes)
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0)
+    if (oversized || totalSize > FILE_LIMITS.maxTotalImageSizeBytes) {
+      return Response.json(
+        { error: 'The selected images are too large. Try fewer or smaller images.' },
+        { status: 413 },
+      )
+    }
+
     const inputFiles: ImageInputFile[] = await Promise.all(
       files.map(async (f) => {
         const mimeType = f.type as 'image/jpeg' | 'image/png'

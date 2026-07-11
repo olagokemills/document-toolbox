@@ -1,6 +1,6 @@
 import { PDFDocument, degrees } from 'pdf-lib'
 import type { PdfInputFile, PdfOperationResult, RotatePagesOptions } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function rotatePdfPages(
   inputFile: PdfInputFile,
@@ -25,6 +25,8 @@ export async function rotatePdfPages(
     }
 
     const totalPages = doc.getPageCount()
+    const pageCountErr = validatePdfPageCount(totalPages)
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
     const pages = doc.getPages()
 
     // Resolve which 0-based indices to rotate

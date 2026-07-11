@@ -19,7 +19,7 @@ export function PdfToImages({ onBack }: { onBack: () => void }) {
   async function handle() {
     setLoading(true); setResult(null); setProgress('')
     try {
-      const bytes = await window.privatePdf.readFile(path)
+      const bytes = await window.privatePdf.loadPdfForRendering(path)
 
       const pdfjsLib = await import('pdfjs-dist')
       pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString()
@@ -49,7 +49,7 @@ export function PdfToImages({ onBack }: { onBack: () => void }) {
       setProgress('Packing ZIP…')
       const zipBytes = await zip.generateAsync({ type: 'uint8array' })
       setProgress('')
-      const r = await window.privatePdf.saveBytes(zipBytes, 'pdf-pages.zip')
+      const r = await window.privatePdf.savePdfImagesArchive(zipBytes)
       setResult(r)
     } catch {
       setResult({ ok: false, error: 'Could not convert this PDF to images. The file may be corrupted or unsupported.' })

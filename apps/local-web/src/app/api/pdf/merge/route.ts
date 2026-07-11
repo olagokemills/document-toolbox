@@ -1,6 +1,7 @@
 import { mergePdfs } from '@private-pdf/pdf-core'
 import { FILE_LIMITS } from '@private-pdf/shared-types'
 import type { PdfInputFile } from '@private-pdf/shared-types'
+import { uploadErrorResponse, validatePdfUpload } from '@/lib/uploadValidation'
 
 export async function POST(req: Request) {
   try {
@@ -16,20 +17,25 @@ export async function POST(req: Request) {
       )
     }
 
-    const inputFiles: PdfInputFile[] = await Promise.all(
-      files.map(async (f) => ({
-        data: new Uint8Array(await f.arrayBuffer()),
-        fileName: f.name,
-      }))
-    )
+    for (const file of files) {
+      const uploadError = validatePdfUpload(file)
+      if (uploadError) return uploadErrorResponse(uploadError)
+    }
 
-    const totalSize = inputFiles.reduce((s, f) => s + f.data.byteLength, 0)
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0)
     if (totalSize > FILE_LIMITS.maxTotalInputSizeBytes) {
       return Response.json(
         { error: 'The total file size is too large. Try fewer or smaller PDFs.' },
         { status: 413 }
       )
     }
+
+    const inputFiles: PdfInputFile[] = await Promise.all(
+      files.map(async (f) => ({
+        data: new Uint8Array(await f.arrayBuffer()),
+        fileName: f.name,
+      }))
+    )
 
     const result = await mergePdfs(inputFiles)
 

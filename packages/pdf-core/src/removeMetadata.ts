@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib'
 import type { PdfInputFile, PdfOperationResult } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function removePdfMetadata(
   inputFile: PdfInputFile
@@ -21,6 +21,9 @@ export async function removePdfMetadata(
         },
       }
     }
+
+    const pageCountErr = validatePdfPageCount(doc.getPageCount())
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
 
     // Clear all common metadata fields
     doc.setTitle('')

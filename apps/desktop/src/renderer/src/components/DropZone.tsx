@@ -15,9 +15,8 @@ export function DropZone({ accept, multiple = false, label, onFiles }: DropZoneP
   function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return
     const arr = Array.from(files)
-    const paths = arr.map((f) => window.privatePdf.getPathForFile(f))
-    const names = arr.map((f) => f.name)
-    onFiles(paths, names)
+    const registered = arr.map((file) => window.privatePdf.registerFile(file))
+    onFiles(registered.map((file) => file.handle), registered.map((file) => file.name))
   }
 
   return (

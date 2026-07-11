@@ -11,5 +11,6 @@ out
 *.log
 release
 apps/desktop/dist
+apps/local-web/public/pdf.worker.min.mjs
 idea.md
 AGENTS.MD

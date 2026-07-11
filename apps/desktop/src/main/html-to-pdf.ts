@@ -1,15 +1,23 @@
-import { BrowserWindow } from 'electron'
+import { BrowserWindow, session } from 'electron'
 import { writeFile, unlink } from 'fs/promises'
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
+import { pathToFileURL } from 'url'
 
 export async function htmlToPdf(
   html: string,
   pageSize: 'A4' | 'Letter' = 'A4',
 ): Promise<Uint8Array> {
-  const tmpPath = join(tmpdir(), `ppdf-${randomUUID()}.html`)
+  const operationId = randomUUID()
+  const tmpPath = join(tmpdir(), `ppdf-${operationId}.html`)
   await writeFile(tmpPath, html, 'utf8')
+
+  const isolatedSession = session.fromPartition(`private-pdf-html-${operationId}`)
+  const documentUrl = pathToFileURL(tmpPath).toString()
+  isolatedSession.webRequest.onBeforeRequest({ urls: ['*://*/*'] }, (details, callback) => {
+    callback({ cancel: details.url !== documentUrl })
+  })
 
   const win = new BrowserWindow({
     show: false,
@@ -18,7 +26,13 @@ export async function htmlToPdf(
       contextIsolation: true,
       sandbox: true,
       javascript: false,
+      partition: `private-pdf-html-${operationId}`,
     },
+  })
+
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  win.webContents.on('will-navigate', (event, url) => {
+    if (url !== documentUrl) event.preventDefault()
   })
 
   try {

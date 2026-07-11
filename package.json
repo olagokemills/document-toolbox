@@ -1,15 +1,16 @@
 {
   "name": "private-pdf-local",
   "private": true,
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
-    "dev:web": "pnpm --filter local-web dev",
-    "build:web": "pnpm --filter local-web build",
-    "dev:desktop": "pnpm --filter @private-pdf/desktop dev",
-    "build:desktop": "pnpm --filter @private-pdf/desktop build",
-    "package:desktop": "pnpm --filter @private-pdf/desktop package",
-    "test": "pnpm -r test",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck"
+    "dev:web": "corepack pnpm --filter local-web dev",
+    "build:web": "corepack pnpm --filter local-web build",
+    "dev:desktop": "corepack pnpm --filter @private-pdf/desktop dev",
+    "build:desktop": "corepack pnpm --filter @private-pdf/desktop build",
+    "package:desktop": "corepack pnpm --filter @private-pdf/desktop package",
+    "test": "corepack pnpm -r test",
+    "lint": "corepack pnpm -r lint",
+    "typecheck": "corepack pnpm -r typecheck"
   },
   "devDependencies": {
     "eslint": "^10.4.1",

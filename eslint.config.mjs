@@ -11,6 +11,7 @@ export default tseslint.config(
       '**/.next/**',
       '**/dist/**',
       '**/release/**',
+      '**/public/pdf.worker.min.mjs',
       '**/*.tsbuildinfo',
     ],
   },

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { registerIpcHandlers } from './ipc-handlers'
 
@@ -20,10 +20,10 @@ function createWindow() {
     },
   })
 
-  // Open external links in default browser, not in app
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
-    return { action: 'deny' }
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (url !== mainWindow?.webContents.getURL()) event.preventDefault()
   })
 
   if (process.env['ELECTRON_RENDERER_URL']) {

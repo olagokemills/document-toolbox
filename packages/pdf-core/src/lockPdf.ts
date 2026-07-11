@@ -1,6 +1,6 @@
 import { PDFDocument } from '@cantoo/pdf-lib'
 import type { PdfInputFile, PdfOperationResult, LockPdfOptions } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function lockPdf(
   inputFile: PdfInputFile,
@@ -30,6 +30,9 @@ export async function lockPdf(
         },
       }
     }
+
+    const pageCountErr = validatePdfPageCount(doc.getPageCount())
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
 
     doc.encrypt({
       userPassword: options.userPassword,

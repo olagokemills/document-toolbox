@@ -1,6 +1,6 @@
 import { PDFDocument } from '@cantoo/pdf-lib'
 import type { PdfInputFile, PdfOperationResult, UnlockPdfOptions } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function unlockPdf(
   inputFile: PdfInputFile,
@@ -34,6 +34,9 @@ export async function unlockPdf(
         },
       }
     }
+
+    const pageCountErr = validatePdfPageCount(doc.getPageCount())
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
 
     // Save without calling encrypt() — produces an unencrypted copy
     const data = await doc.save()

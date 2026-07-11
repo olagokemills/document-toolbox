@@ -42,10 +42,24 @@ const FROM_PDF_TOOLS: Tool[] = [
   { id: 'pdf-to-pdfa', title: 'PDF to PDF/A', description: 'Convert to PDF/A-1b format for long-term archiving.', color: '#6b4fa8', icon: <IconPDFToPDFA /> },
 ]
 
+const IMAGE_TOOLS: Tool[] = [
+  { id: 'image-compress', title: 'Compress Images', description: 'Reduce JPG, PNG, and WebP file sizes.', color: '#e8445a', icon: <IconImagesToPDF /> },
+  { id: 'image-resize', title: 'Resize Images', description: 'Resize images by pixels or percentage.', color: '#2d7ef0', icon: <IconImagesToPDF /> },
+  { id: 'image-crop', title: 'Crop Image', description: 'Crop an image using exact coordinates.', color: '#e87d2a', icon: <IconImagesToPDF /> },
+  { id: 'image-rotate', title: 'Rotate & Flip', description: 'Rotate or flip images in bulk.', color: '#0eadb0', icon: <IconImagesToPDF /> },
+  { id: 'image-convert', title: 'Convert Image Format', description: 'Convert between JPG, PNG, and WebP.', color: '#8a5ae8', icon: <IconImagesToPDF /> },
+  { id: 'image-remove-metadata', title: 'Remove Image Metadata', description: 'Remove EXIF, GPS, and camera metadata.', color: '#17a65e', icon: <IconRemoveMetadata /> },
+  { id: 'image-watermark', title: 'Watermark Images', description: 'Apply text or image watermarks.', color: '#c99b14', icon: <IconWatermark /> },
+  { id: 'image-blur', title: 'Blur or Pixelate', description: 'Hide selected areas manually.', color: '#d94da6', icon: <IconImagesToPDF /> },
+  { id: 'image-meme', title: 'Meme Maker', description: 'Add top and bottom captions.', color: '#c75c1e', icon: <IconImagesToPDF /> },
+  { id: 'image-adjust', title: 'Adjust Images', description: 'Tune color, contrast, saturation, and sharpness.', color: '#1a7a4a', icon: <IconImagesToPDF /> },
+]
+
 const ALL_SECTIONS = [
   { title: 'PDF tools', tools: PDF_TOOLS },
   { title: 'Convert to PDF', tools: TO_PDF_TOOLS },
   { title: 'Convert from PDF', tools: FROM_PDF_TOOLS },
+  { title: 'Image tools', tools: IMAGE_TOOLS },
 ]
 
 function filterTools(tools: Tool[], query: string) {
@@ -88,7 +102,7 @@ export function HomePage({ onNavigate }: Props) {
 
       <main className={styles.main}>
         <section className={styles.hero}>
-          <h1 className={styles.heading}>PDF tools that run on your device.</h1>
+          <h1 className={styles.heading}>Document and image tools that run on your device.</h1>
           <p className={styles.sub}>No uploads. No accounts. No internet required.</p>
         </section>
 

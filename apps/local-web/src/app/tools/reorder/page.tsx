@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { DropZone } from '@/components/DropZone'
 import { ProcessingButton } from '@/components/ProcessingButton'
+import { getPdfPageCount } from '@/lib/getPdfPageCount'
 import styles from '../tool.module.css'
 
 const COLOR = '#e87d2a'
@@ -19,20 +20,14 @@ export default function ReorderPage() {
     const f = incoming[0]
     if (!f) return
     setFile(f)
-    // Count pages by reading PDF locally
     try {
-      const buf = await f.arrayBuffer()
-      const text = new Uint8Array(buf)
-      // Quick page count heuristic from PDF structure
-      const str = new TextDecoder('latin1').decode(text)
-      const matches = str.match(/\/Type\s*\/Page[^s]/g)
-      const count = matches ? matches.length : 0
-      const pages = count > 0 ? count : 1
+      const pages = await getPdfPageCount(f)
       setPageCount(pages)
       setOrder(Array.from({ length: pages }, (_, i) => i + 1))
     } catch {
       setPageCount(0)
       setOrder([])
+      setError('We could not read this PDF. The file may be corrupted, encrypted, or unsupported.')
     }
   }
 
@@ -83,7 +78,7 @@ export default function ReorderPage() {
       {order.length > 0 && (
         <ul className={styles.fileList} aria-label="Page order">
           {order.map((pageNum, idx) => (
-            <li key={idx} className={styles.fileItem}>
+              <li key={pageNum} className={styles.fileItem}>
               <div className={styles.fileInfo}>
                 <span className={styles.fileName}>Page {pageNum}</span>
                 {pageNum !== idx + 1 && (

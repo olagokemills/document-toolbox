@@ -8,6 +8,8 @@ export type ToolId =
   | 'lock' | 'unlock'
   | 'word-to-pdf' | 'pptx-to-pdf' | 'excel-to-pdf' | 'html-to-pdf'
   | 'pdf-to-word' | 'pdf-to-excel' | 'pdf-to-pdfa'
+  | 'image-compress' | 'image-resize' | 'image-crop' | 'image-rotate' | 'image-convert'
+  | 'image-remove-metadata' | 'image-watermark' | 'image-blur' | 'image-meme' | 'image-adjust'
 
 export default function App() {
   const [tool, setTool] = useState<ToolId | null>(null)

@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib'
 import type { PdfInputFile, PdfOperationResult, ReorderPagesOptions } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function reorderPdfPages(
   inputFile: PdfInputFile,
@@ -26,6 +26,9 @@ export async function reorderPdfPages(
     const totalPages = src.getPageCount()
     const { pageOrder } = options
 
+    const pageCountErr = validatePdfPageCount(totalPages)
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
+
     if (pageOrder.length === 0) {
       return {
         status: 'error',
@@ -42,6 +45,18 @@ export async function reorderPdfPages(
             userMessage: `Page ${n} does not exist. This PDF has ${totalPages} page${totalPages === 1 ? '' : 's'}.`,
           },
         }
+      }
+    }
+
+    const uniquePages = new Set(pageOrder)
+    if (pageOrder.length !== totalPages || uniquePages.size !== totalPages) {
+      return {
+        status: 'error',
+        error: {
+          code: 'INVALID_PAGE_RANGE',
+          userMessage: `Enter every page exactly once. This PDF has ${totalPages} page${totalPages === 1 ? '' : 's'}.`,
+          developerMessage: `Expected a permutation of 1..${totalPages}, received ${pageOrder.join(',')}`,
+        },
       }
     }
 

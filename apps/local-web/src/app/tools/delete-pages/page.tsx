@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { DropZone } from '@/components/DropZone'
 import { ProcessingButton } from '@/components/ProcessingButton'
+import { getPdfPageCount } from '@/lib/getPdfPageCount'
 import styles from '../tool.module.css'
 
 const COLOR = '#d94da6'
@@ -21,13 +22,10 @@ export default function DeletePagesPage() {
     setFile(f)
     setSelected(new Set())
     try {
-      const buf = await f.arrayBuffer()
-      const str = new TextDecoder('latin1').decode(new Uint8Array(buf))
-      const matches = str.match(/\/Type\s*\/Page[^s]/g)
-      const count = matches ? Math.max(matches.length, 1) : 1
-      setPageCount(count)
+      setPageCount(await getPdfPageCount(f))
     } catch {
-      setPageCount(1)
+      setPageCount(0)
+      setError('We could not read this PDF. The file may be corrupted, encrypted, or unsupported.')
     }
   }
 
@@ -79,9 +77,9 @@ export default function DeletePagesPage() {
       {pageCount > 0 && (
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Select pages to delete ({selected.size} selected)</legend>
-          <div className={pageGridStyle}>
+          <div className={styles.pageGrid}>
             {Array.from({ length: pageCount }, (_, i) => i + 1).map((n) => (
-              <label key={n} className={`${pageChipStyle} ${selected.has(n) ? pageChipSelectedStyle : ''}`}
+              <label key={n} className={`${styles.pageChip} ${selected.has(n) ? styles.pageChipSelected : ''}`}
                 style={{ '--tool-color': COLOR } as React.CSSProperties}>
                 <input type="checkbox" checked={selected.has(n)} onChange={() => toggle(n)}
                   className={styles.srOnly} aria-label={`Page ${n}`} />
@@ -102,11 +100,6 @@ export default function DeletePagesPage() {
     </div>
   )
 }
-
-// Inline style strings for the page chip grid (avoids an extra CSS module)
-const pageGridStyle = 'display:flex;flex-wrap:wrap;gap:0.4rem' as unknown as string
-const pageChipStyle = 'cursor:pointer;border:1px solid var(--color-border);border-radius:6px;padding:0.3rem 0.6rem;font-size:0.8rem;user-select:none;transition:all 0.1s' as unknown as string
-const pageChipSelectedStyle = 'border-color:var(--tool-color);background:color-mix(in srgb,var(--tool-color) 12%,white);color:var(--tool-color);font-weight:600' as unknown as string
 
 function download(blob: Blob, name: string) {
   const url = URL.createObjectURL(blob)

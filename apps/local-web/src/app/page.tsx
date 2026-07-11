@@ -43,10 +43,24 @@ const FROM_PDF_TOOLS: Tool[] = [
   { title: 'PDF to PDF/A', description: 'Convert to PDF/A-1b format for long-term archiving.', href: '/tools/pdf-to-pdfa', color: '#6b4fa8', icon: <IconPDFToPDFA /> },
 ]
 
+const IMAGE_TOOLS: Tool[] = [
+  { title: 'Compress Images', description: 'Reduce JPG, PNG, and WebP file sizes.', href: '/tools/image/compress', color: '#e8445a', icon: <IconImagesToPDF /> },
+  { title: 'Resize Images', description: 'Resize images by pixels or percentage.', href: '/tools/image/resize', color: '#2d7ef0', icon: <IconImagesToPDF /> },
+  { title: 'Crop Image', description: 'Crop an image using exact coordinates.', href: '/tools/image/crop', color: '#e87d2a', icon: <IconImagesToPDF /> },
+  { title: 'Rotate & Flip', description: 'Rotate or flip images in bulk.', href: '/tools/image/rotate', color: '#0eadb0', icon: <IconImagesToPDF /> },
+  { title: 'Convert Image Format', description: 'Convert between JPG, PNG, and WebP.', href: '/tools/image/convert', color: '#8a5ae8', icon: <IconImagesToPDF /> },
+  { title: 'Remove Image Metadata', description: 'Remove EXIF, GPS, and camera metadata.', href: '/tools/image/remove-metadata', color: '#17a65e', icon: <IconRemoveMetadata /> },
+  { title: 'Watermark Images', description: 'Apply text or image watermarks.', href: '/tools/image/watermark', color: '#c99b14', icon: <IconWatermark /> },
+  { title: 'Blur or Pixelate', description: 'Hide selected areas manually.', href: '/tools/image/blur', color: '#d94da6', icon: <IconImagesToPDF /> },
+  { title: 'Meme Maker', description: 'Add top and bottom captions.', href: '/tools/image/meme', color: '#c75c1e', icon: <IconImagesToPDF /> },
+  { title: 'Adjust Images', description: 'Tune color, contrast, saturation, and sharpness.', href: '/tools/image/adjust', color: '#1a7a4a', icon: <IconImagesToPDF /> },
+]
+
 const ALL_SECTIONS = [
-  { title: 'PDF tools', tools: PDF_TOOLS },
-  { title: 'Convert to PDF', tools: TO_PDF_TOOLS },
-  { title: 'Convert from PDF', tools: FROM_PDF_TOOLS },
+  { title: 'PDF tools', category: 'pdf', tools: PDF_TOOLS },
+  { title: 'Convert to PDF', category: 'pdf', tools: TO_PDF_TOOLS },
+  { title: 'Convert from PDF', category: 'pdf', tools: FROM_PDF_TOOLS },
+  { title: 'Image tools', category: 'image', tools: IMAGE_TOOLS },
 ]
 
 function filterTools(tools: Tool[], query: string): Tool[] {
@@ -77,19 +91,24 @@ function ToolSection({ title, tools }: { title: string; tools: Tool[] }) {
 
 export default function HomePage() {
   const [query, setQuery] = useState('')
+  const [category, setCategory] = useState<'all' | 'pdf' | 'image'>('all')
 
   const filtered = useMemo(
-    () => ALL_SECTIONS.map((s) => ({ ...s, tools: filterTools(s.tools, query) })),
-    [query],
+    () => ALL_SECTIONS.filter((section) => category === 'all' || section.category === category).map((s) => ({ ...s, tools: filterTools(s.tools, query) })),
+    [query, category],
   )
   const totalResults = filtered.reduce((n, s) => n + s.tools.length, 0)
 
   return (
     <div>
       <section className={styles.hero}>
-        <h1 className={styles.heading}>Private PDF tools that run on your device.</h1>
+        <h1 className={styles.heading}>Private document and image tools that run on your device.</h1>
         <p className={styles.sub}>No uploads. No accounts. No cloud processing.</p>
       </section>
+
+      <div role="tablist" aria-label="Tool categories" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+        {(['all', 'pdf', 'image'] as const).map((value) => <button key={value} role="tab" aria-selected={category === value} onClick={() => setCategory(value)} style={{ border: '1px solid var(--color-border)', borderRadius: 999, padding: '0.45rem 0.85rem', background: category === value ? '#111' : 'var(--color-surface)', color: category === value ? '#fff' : 'var(--color-text)', cursor: 'pointer' }}>{value === 'all' ? 'All tools' : value === 'pdf' ? 'PDF tools' : 'Image tools'}</button>)}
+      </div>
 
       <div className={styles.searchWrap}>
         <input

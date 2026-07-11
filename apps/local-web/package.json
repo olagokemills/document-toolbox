@@ -3,7 +3,9 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "predev": "node scripts/copy-pdf-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-pdf-worker.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -11,6 +13,7 @@
   },
   "dependencies": {
     "@private-pdf/pdf-core": "workspace:*",
+    "@private-pdf/image-core": "workspace:*",
     "@private-pdf/shared-types": "workspace:*",
     "fast-xml-parser": "^5.8.0",
     "jszip": "^3.10.1",

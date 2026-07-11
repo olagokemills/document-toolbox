@@ -1,4 +1,5 @@
 import { PDFDocument, PageSizes } from 'pdf-lib'
+import { FILE_LIMITS } from '@private-pdf/shared-types'
 import type { ImageInputFile, PdfOperationResult, ImagesToPdfOptions } from '@private-pdf/shared-types'
 import { validateImageInput } from './validate'
 
@@ -11,6 +12,27 @@ export async function imagesToPdf(
       return {
         status: 'error',
         error: { code: 'NO_PAGES_SELECTED', userMessage: 'Please select at least one image.' },
+      }
+    }
+
+    if (inputFiles.length > FILE_LIMITS.maxImageCount) {
+      return {
+        status: 'error',
+        error: {
+          code: 'TOO_MANY_FILES',
+          userMessage: `You can convert up to ${FILE_LIMITS.maxImageCount} images at once.`,
+        },
+      }
+    }
+
+    const totalSize = inputFiles.reduce((sum, file) => sum + file.data.byteLength, 0)
+    if (totalSize > FILE_LIMITS.maxTotalImageSizeBytes) {
+      return {
+        status: 'error',
+        error: {
+          code: 'FILE_TOO_LARGE',
+          userMessage: 'The total size of the selected images is too large. Try fewer or smaller images.',
+        },
       }
     }
 

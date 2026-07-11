@@ -1,7 +1,7 @@
 import { PDFDocument } from 'pdf-lib'
 import JSZip from 'jszip'
 import type { PdfInputFile, PdfSplitResult, SplitPdfOptions } from '@private-pdf/shared-types'
-import { validatePdfInput, validatePageRange } from './validate'
+import { validatePdfInput, validatePageRange, validatePdfPageCount } from './validate'
 
 export async function splitPdf(
   inputFile: PdfInputFile,
@@ -26,6 +26,8 @@ export async function splitPdf(
     }
 
     const totalPages = src.getPageCount()
+    const pageCountErr = validatePdfPageCount(totalPages)
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
 
     if (options.mode === 'every-page') {
       const files: PdfSplitResult['files'] = []

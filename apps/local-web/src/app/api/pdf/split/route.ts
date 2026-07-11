@@ -1,5 +1,7 @@
-import { splitPdf, packAsZip } from '@private-pdf/pdf-core'
+import { splitPdf } from '@private-pdf/pdf-core'
 import type { PdfInputFile, SplitPdfOptions } from '@private-pdf/shared-types'
+import { uploadErrorResponse, validatePdfUpload } from '@/lib/uploadValidation'
+import JSZip from 'jszip'
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +13,8 @@ export async function POST(req: Request) {
     if (!(file instanceof File)) {
       return Response.json({ error: 'Please select a PDF file.' }, { status: 400 })
     }
+    const uploadError = validatePdfUpload(file)
+    if (uploadError) return uploadErrorResponse(uploadError)
 
     const inputFile: PdfInputFile = {
       data: new Uint8Array(await file.arrayBuffer()),
@@ -55,7 +59,9 @@ export async function POST(req: Request) {
       })
     }
 
-    const zip = await packAsZip(files)
+    const archive = new JSZip()
+    for (const output of files) archive.file(output.fileName, output.data)
+    const zip = await archive.generateAsync({ type: 'uint8array' })
     return new Response(Buffer.from(zip), {
       status: 200,
       headers: {

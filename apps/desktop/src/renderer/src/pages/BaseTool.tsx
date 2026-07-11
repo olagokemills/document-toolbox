@@ -21,10 +21,10 @@ export function ResultBox({ result, error }: ResultBoxProps) {
   if (!result.ok) return <p className={styles.error} role="alert">{result.error}</p>
   return (
     <div className={styles.success} role="status">
-      <span className={styles.successPath}>Saved: {result.savedPath}</span>
+      <span className={styles.successPath}>Saved: {result.fileName}</span>
       <button
         className={styles.showInFolderBtn}
-        onClick={() => window.privatePdf.showInFolder(result.savedPath)}
+        onClick={() => window.privatePdf.showSavedFile(result.savedFileHandle)}
       >
         Show in folder
       </button>

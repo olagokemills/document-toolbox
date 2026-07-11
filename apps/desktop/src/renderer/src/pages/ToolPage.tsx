@@ -19,10 +19,11 @@ import { PptxToPdf } from '../tools/PptxToPdf'
 import { PdfToWord } from '../tools/PdfToWord'
 import { PdfToExcel } from '../tools/PdfToExcel'
 import { PdfToPdfa } from '../tools/PdfToPdfa'
+import { ImageTool } from '../tools/ImageTool'
 
 type ToolComponent = React.ComponentType<{ onBack: () => void }>
 
-const TOOLS: Record<ToolId, ToolComponent> = {
+const TOOLS: Partial<Record<ToolId, ToolComponent>> = {
   merge: MergePdf,
   split: SplitPdf,
   rotate: RotatePdf,
@@ -48,6 +49,9 @@ const TOOLS: Record<ToolId, ToolComponent> = {
 interface Props { toolId: ToolId; onBack: () => void }
 
 export function ToolPage({ toolId, onBack }: Props) {
+  if (toolId.startsWith('image-')) {
+    return <ImageTool operation={toolId.replace('image-', '')} onBack={onBack} />
+  }
   const Component = TOOLS[toolId]
-  return <Component onBack={onBack} />
+  return Component ? <Component onBack={onBack} /> : null
 }

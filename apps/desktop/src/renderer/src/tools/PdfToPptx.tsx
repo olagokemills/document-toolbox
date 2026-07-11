@@ -17,7 +17,7 @@ export function PdfToPptx({ onBack }: { onBack: () => void }) {
   async function handle() {
     setLoading(true); setResult(null); setProgress('')
     try {
-      const bytes = await window.privatePdf.readFile(path)
+      const bytes = await window.privatePdf.loadPdfForRendering(path)
 
       const pdfjsLib = await import('pdfjs-dist')
       pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url).toString()
@@ -49,7 +49,7 @@ export function PdfToPptx({ onBack }: { onBack: () => void }) {
       const pptxBytes = new Uint8Array(ab)
       setProgress('')
       const baseName = name.replace(/\.pdf$/i, '')
-      const r = await window.privatePdf.saveBytes(pptxBytes, `${baseName}.pptx`)
+      const r = await window.privatePdf.savePdfPowerPoint(pptxBytes, `${baseName}.pptx`)
       setResult(r)
     } catch {
       setResult({ ok: false, error: 'Could not convert this PDF to PowerPoint. The file may be corrupted or unsupported.' })

@@ -1,5 +1,6 @@
 import { rotatePdfPages } from '@private-pdf/pdf-core'
 import type { PdfInputFile, RotatePagesOptions } from '@private-pdf/shared-types'
+import { uploadErrorResponse, validatePdfUpload } from '@/lib/uploadValidation'
 
 export async function POST(req: Request) {
   try {
@@ -11,6 +12,8 @@ export async function POST(req: Request) {
     if (!(file instanceof File)) {
       return Response.json({ error: 'Please select a PDF file.' }, { status: 400 })
     }
+    const uploadError = validatePdfUpload(file)
+    if (uploadError) return uploadErrorResponse(uploadError)
 
     const deg = parseInt(degreesRaw, 10)
     if (deg !== 90 && deg !== 180 && deg !== 270) {

@@ -1,6 +1,6 @@
 import { PDFDocument, PDFName } from 'pdf-lib'
 import type { PdfInputFile, PdfOperationResult } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function pdfToPdfA(inputFile: PdfInputFile): Promise<PdfOperationResult> {
   try {
@@ -19,6 +19,9 @@ export async function pdfToPdfA(inputFile: PdfInputFile): Promise<PdfOperationRe
         },
       }
     }
+
+    const pageCountErr = validatePdfPageCount(doc.getPageCount())
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
 
     // Apply best-effort PDF/A-1b metadata
     const now = new Date().toISOString()

@@ -1,5 +1,5 @@
 import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
-import { readFile, writeFile } from 'fs/promises'
+import { readFile, stat, writeFile } from 'fs/promises'
 import { basename, extname } from 'path'
 import JSZip from 'jszip'
 import mammoth from 'mammoth'
@@ -21,19 +21,55 @@ import {
   pdfToXlsx,
   pdfToPdfA,
 } from '@private-pdf/pdf-core'
+import {
+  adjustImages, blurImageAreas, compressImages, convertImages, createMeme, cropImage,
+  removeImageMetadata, resizeImages, rotateImages, watermarkImages,
+} from '@private-pdf/image-core'
 import type {
+  AdjustImagesOptions,
+  BlurImageOptions,
+  CompressImagesOptions,
+  ConvertImagesOptions,
+  CropImageOptions,
   PdfInputFile,
   ImageInputFile,
   WatermarkOptions,
   LockPdfOptions,
+  MemeOptions,
+  ResizeImagesOptions,
+  RotateImagesOptions,
+  WatermarkImagesOptions,
 } from '@private-pdf/shared-types'
+import { FILE_LIMITS } from '@private-pdf/shared-types'
 import { htmlToPdf } from './html-to-pdf'
 
 type IpcResult = { ok: true; savedPath: string } | { ok: false; error: string }
 
+const GENERAL_OPERATION_ERROR =
+  'We could not process this file. It may be corrupted or unsupported. Your file was not uploaded anywhere.'
+
+function safeFailure(message = GENERAL_OPERATION_ERROR): IpcResult {
+  return { ok: false, error: message }
+}
+
 async function readPdfFile(filePath: string): Promise<PdfInputFile> {
-  const data = await readFile(filePath)
+  if (extname(filePath).toLowerCase() !== '.pdf') throw new Error('Invalid PDF extension')
+  const data = await readFileWithinLimit(filePath, FILE_LIMITS.maxSinglePdfSizeBytes)
   return { fileName: basename(filePath), data: new Uint8Array(data) }
+}
+
+async function readImageFile(filePath: string): Promise<ImageInputFile> {
+  const extension = extname(filePath).toLowerCase()
+  if (!['.jpg', '.jpeg', '.png', '.webp'].includes(extension)) throw new Error('Invalid image extension')
+  const data = await readFileWithinLimit(filePath, FILE_LIMITS.maxSingleImageSizeBytes)
+  const mimeType = extension === '.jpg' || extension === '.jpeg' ? 'image/jpeg' : extension === '.webp' ? 'image/webp' : 'image/png'
+  return { fileName: basename(filePath), data: new Uint8Array(data), mimeType }
+}
+
+async function readFileWithinLimit(filePath: string, maxBytes: number): Promise<Buffer> {
+  const info = await stat(filePath)
+  if (!info.isFile() || info.size > maxBytes) throw new Error('File exceeds the supported size limit')
+  return readFile(filePath)
 }
 
 async function showSaveDialog(
@@ -61,47 +97,57 @@ async function saveResult(
 }
 
 export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
-  // ── Dialogs ──────────────────────────────────────────────────────────────
-
-  ipcMain.handle(
-    'dialog:open-files',
-    async (
-      _,
-      opts: {
-        multiple?: boolean
-        filters?: { name: string; extensions: string[] }[]
-      },
-    ) => {
-      const result = await dialog.showOpenDialog(getWindow()!, {
-        properties: opts.multiple ? ['openFile', 'multiSelections'] : ['openFile'],
-        filters: opts.filters ?? [{ name: 'All Files', extensions: ['*'] }],
-      })
-      return result.canceled ? [] : result.filePaths
-    },
-  )
-
-  ipcMain.handle('dialog:save-file', async (_, defaultName: string) => {
-    const ext = extname(defaultName)
-    const result = await dialog.showSaveDialog(getWindow()!, {
-      defaultPath: defaultName,
-      filters: [{ name: ext.replace('.', '').toUpperCase(), extensions: [ext.replace('.', '')] }],
-    })
-    return result.canceled ? null : result.filePath
+  // Renderer-only conversions receive bytes only for a file explicitly selected by the user.
+  ipcMain.handle('pdf:load-for-rendering', async (_, filePath: string) => {
+    const file = await readPdfFile(filePath)
+    return file.data
   })
 
-  // ── File IO ───────────────────────────────────────────────────────────────
+  ipcMain.handle('pdf:save-images-archive', async (_, bytes: Uint8Array) =>
+    saveResult(bytes, getWindow(), 'pdf-pages.zip'))
 
-  ipcMain.handle('fs:read-file', async (_, filePath: string) => {
-    const data = await readFile(filePath)
-    return new Uint8Array(data)
+  ipcMain.handle('pdf:save-powerpoint', async (_, bytes: Uint8Array, defaultName: string) => {
+    const safeName = basename(defaultName).replace(/[^a-zA-Z0-9._ -]/g, '_')
+    const outputName = safeName.toLowerCase().endsWith('.pptx') ? safeName : `${safeName}.pptx`
+    return saveResult(bytes, getWindow(), outputName)
   })
 
-  ipcMain.handle('fs:save-bytes', async (_, bytes: Uint8Array, defaultName: string) => {
-    return saveResult(bytes, getWindow(), defaultName)
-  })
-
-  ipcMain.handle('shell:show-in-folder', async (_, filePath: string) => {
+  ipcMain.handle('shell:show-saved-file', async (_, filePath: string) => {
     shell.showItemInFolder(filePath)
+  })
+
+  ipcMain.handle('image:process', async (_, operation: string, filePaths: string[], options: unknown, watermarkPath?: string): Promise<IpcResult> => {
+    try {
+      if (filePaths.length === 0 || filePaths.length > FILE_LIMITS.maxImageCount) return safeFailure('Please select between 1 and 100 images.')
+      const files: ImageInputFile[] = []
+      for (const filePath of filePaths) files.push(await readImageFile(filePath))
+      let result
+      switch (operation) {
+        case 'compress': result = await compressImages(files, options as CompressImagesOptions); break
+        case 'resize': result = await resizeImages(files, options as ResizeImagesOptions); break
+        case 'crop': result = await cropImage(files[0], options as CropImageOptions); break
+        case 'rotate': result = await rotateImages(files, options as RotateImagesOptions); break
+        case 'convert': result = await convertImages(files, options as ConvertImagesOptions); break
+        case 'remove-metadata': result = await removeImageMetadata(files); break
+        case 'blur': result = await blurImageAreas(files[0], options as BlurImageOptions); break
+        case 'meme': result = await createMeme(files[0], options as MemeOptions); break
+        case 'adjust': result = await adjustImages(files, options as AdjustImagesOptions); break
+        case 'watermark': {
+          const watermarkOptions = { ...(options as WatermarkImagesOptions) }
+          if (watermarkPath) watermarkOptions.image = await readImageFile(watermarkPath)
+          result = await watermarkImages(files, watermarkOptions)
+          break
+        }
+        default: return safeFailure('Unknown image operation.')
+      }
+      if (result.status !== 'success' || !result.files) return safeFailure(result.error?.userMessage)
+      if (result.files.length === 1) return saveResult(result.files[0].data, getWindow(), result.files[0].fileName)
+      const archive = new JSZip()
+      for (const output of result.files) archive.file(output.fileName, output.data)
+      return saveResult(await archive.generateAsync({ type: 'uint8array' }), getWindow(), 'processed-images.zip')
+    } catch {
+      return safeFailure()
+    }
   })
 
   // ── PDF Operations ────────────────────────────────────────────────────────
@@ -113,8 +159,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
       if (result.status !== 'success' || !result.data)
         return { ok: false, error: result.error?.userMessage ?? 'Merge failed.' }
       return saveResult(result.data, getWindow(), 'merged.pdf')
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
@@ -142,8 +188,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
         for (const f of result.files) zip.file(f.fileName, f.data)
         const zipData = await zip.generateAsync({ type: 'uint8array' })
         return saveResult(zipData, getWindow(), 'split-pages.zip')
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -158,8 +204,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Rotate failed.' }
         const name = basename(filePath, extname(filePath)) + '-rotated.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -174,8 +220,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Delete failed.' }
         const name = basename(filePath, extname(filePath)) + '-edited.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -198,8 +244,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Extract failed.' }
         const name = basename(filePath, extname(filePath)) + '-extracted.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -214,8 +260,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Reorder failed.' }
         const name = basename(filePath, extname(filePath)) + '-reordered.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -230,8 +276,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Watermark failed.' }
         const name = basename(filePath, extname(filePath)) + '-watermarked.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -244,17 +290,28 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
         return { ok: false, error: result.error?.userMessage ?? 'Remove metadata failed.' }
       const name = basename(filePath, extname(filePath)) + '-clean.pdf'
       return saveResult(result.data, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
   ipcMain.handle('pdf:images-to-pdf', async (_, filePaths: string[]): Promise<IpcResult> => {
     try {
+      if (filePaths.length > FILE_LIMITS.maxImageCount) {
+        return safeFailure(`You can convert up to ${FILE_LIMITS.maxImageCount} images at once.`)
+      }
+      const imageStats = await Promise.all(filePaths.map((filePath) => stat(filePath)))
+      const totalImageSize = imageStats.reduce((sum, info) => sum + info.size, 0)
+      if (totalImageSize > FILE_LIMITS.maxTotalImageSizeBytes) {
+        return safeFailure('The total size of the selected images is too large. Try fewer or smaller images.')
+      }
       const files: ImageInputFile[] = await Promise.all(
         filePaths.map(async (p) => {
-          const data = new Uint8Array(await readFile(p))
           const ext = extname(p).toLowerCase()
+          if (!['.jpg', '.jpeg', '.png'].includes(ext)) throw new Error('Invalid image extension')
+          const data = new Uint8Array(
+            await readFileWithinLimit(p, FILE_LIMITS.maxSingleImageSizeBytes),
+          )
           const mimeType = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png'
           return { fileName: basename(p), data, mimeType }
         }),
@@ -263,8 +320,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
       if (result.status !== 'success' || !result.data)
         return { ok: false, error: result.error?.userMessage ?? 'Images to PDF failed.' }
       return saveResult(result.data, getWindow(), 'images.pdf')
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
@@ -278,8 +335,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Lock failed.' }
         const name = basename(filePath, extname(filePath)) + '-locked.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -294,8 +351,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
           return { ok: false, error: result.error?.userMessage ?? 'Unlock failed.' }
         const name = basename(filePath, extname(filePath)) + '-unlocked.pdf'
         return saveResult(result.data, getWindow(), name)
-      } catch (e) {
-        return { ok: false, error: String(e) }
+      } catch {
+        return safeFailure()
       }
     },
   )
@@ -304,18 +361,18 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
 
   ipcMain.handle('convert:html-to-pdf', async (_, filePath: string): Promise<IpcResult> => {
     try {
-      const html = await readFile(filePath, 'utf8')
+      const html = (await readFileWithinLimit(filePath, FILE_LIMITS.maxSinglePdfSizeBytes)).toString('utf8')
       const pdf = await htmlToPdf(html)
       const name = basename(filePath, extname(filePath)) + '.pdf'
       return saveResult(pdf, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
   ipcMain.handle('convert:word-to-pdf', async (_, filePath: string): Promise<IpcResult> => {
     try {
-      const docxData = await readFile(filePath)
+      const docxData = await readFileWithinLimit(filePath, FILE_LIMITS.maxSinglePdfSizeBytes)
       const { value: html } = await mammoth.convertToHtml({ buffer: docxData })
       const styledHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
         body { font-family: Georgia, serif; max-width: 780px; margin: 40px auto; line-height: 1.6; color: #1a1a1a; }
@@ -327,14 +384,14 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
       const pdf = await htmlToPdf(styledHtml)
       const name = basename(filePath, extname(filePath)) + '.pdf'
       return saveResult(pdf, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
   ipcMain.handle('convert:excel-to-pdf', async (_, filePath: string): Promise<IpcResult> => {
     try {
-      const data = await readFile(filePath)
+      const data = await readFileWithinLimit(filePath, FILE_LIMITS.maxSinglePdfSizeBytes)
       const wb = XLSX.read(data, { type: 'buffer' })
       const sheets = wb.SheetNames.map((name) => {
         const html = XLSX.utils.sheet_to_html(wb.Sheets[name])
@@ -350,14 +407,14 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
       const pdf = await htmlToPdf(styledHtml, 'Letter')
       const name = basename(filePath, extname(filePath)) + '.pdf'
       return saveResult(pdf, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
   ipcMain.handle('convert:pptx-to-pdf', async (_, filePath: string): Promise<IpcResult> => {
     try {
-      const data = await readFile(filePath)
+      const data = await readFileWithinLimit(filePath, FILE_LIMITS.maxSinglePdfSizeBytes)
       const zip = await JSZip.loadAsync(data)
       const slideFiles = Object.keys(zip.files)
         .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
@@ -403,8 +460,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
       const pdf = await htmlToPdf(styledHtml, 'A4')
       const name = basename(filePath, extname(filePath)) + '.pdf'
       return saveResult(pdf, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
@@ -418,8 +475,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
         return { ok: false, error: result.error?.userMessage ?? 'PDF to Word failed.' }
       const name = basename(filePath, extname(filePath)) + '.docx'
       return saveResult(result.data, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
@@ -431,8 +488,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
         return { ok: false, error: result.error?.userMessage ?? 'PDF to Excel failed.' }
       const name = basename(filePath, extname(filePath)) + '.xlsx'
       return saveResult(result.data, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 
@@ -444,8 +501,8 @@ export function registerIpcHandlers(getWindow: () => BrowserWindow | null) {
         return { ok: false, error: result.error?.userMessage ?? 'PDF to PDF/A failed.' }
       const name = basename(filePath, extname(filePath)) + '-pdfa.pdf'
       return saveResult(result.data, getWindow(), name)
-    } catch (e) {
-      return { ok: false, error: String(e) }
+    } catch {
+      return safeFailure()
     }
   })
 }

@@ -39,12 +39,17 @@ export interface PdfSplitResult {
 
 export interface ImageOperationResult {
   status: OperationStatus
-  files?: Array<{
-    fileName: string
-    mimeType: 'image/png'
-    data: Uint8Array
-  }>
+  files?: ImageOutputFile[]
   error?: SafeOperationError
+}
+
+export interface ImageOutputFile {
+    fileName: string
+    mimeType: ImageMimeType
+    width: number
+    height: number
+    byteSize: number
+    data: Uint8Array
 }
 
 export interface PdfInputFile {
@@ -52,12 +57,65 @@ export interface PdfInputFile {
   fileName: string
 }
 
-export type ImageMimeType = 'image/jpeg' | 'image/png'
+export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/webp'
 
 export interface ImageInputFile {
   data: Uint8Array
   fileName: string
   mimeType: ImageMimeType
+}
+
+export type ImageFormat = 'jpeg' | 'png' | 'webp'
+export type ImageCompressionPreset = 'balanced' | 'high-quality' | 'smallest'
+
+export interface CompressImagesOptions { preset: ImageCompressionPreset }
+export interface ResizeImagesOptions {
+  mode: 'pixels' | 'percentage'
+  width?: number
+  height?: number
+  percentage?: number
+  fit: 'inside' | 'fill'
+  maintainAspectRatio: boolean
+  withoutEnlargement: boolean
+}
+export interface CropImageOptions { left: number; top: number; width: number; height: number }
+export interface RotateImagesOptions {
+  angle: 0 | 90 | 180 | 270
+  flipHorizontal: boolean
+  flipVertical: boolean
+  applyTo: 'all' | 'portrait' | 'landscape'
+}
+export interface ConvertImagesOptions { format: ImageFormat; quality: number; background: string }
+export type ImageWatermarkPosition = WatermarkPosition
+export interface WatermarkImagesOptions {
+  kind: 'text' | 'image'
+  text?: string
+  image?: ImageInputFile
+  position: ImageWatermarkPosition
+  opacity: number
+  scale: number
+  color: string
+  fontSize: number
+  repeat: boolean
+}
+export interface BlurArea { left: number; top: number; width: number; height: number }
+export interface BlurImageOptions { mode: 'blur' | 'pixelate'; intensity: number; areas: BlurArea[] }
+export interface MemeOptions {
+  topText: string
+  bottomText: string
+  placement: 'inside' | 'outside'
+  fontSize: number
+  color: string
+  background: string
+}
+export interface AdjustImagesOptions {
+  brightness: number
+  contrast: number
+  saturation: number
+  grayscale: boolean
+  sepia: boolean
+  sharpen: number
+  autoOrient: boolean
 }
 
 // Operation option types

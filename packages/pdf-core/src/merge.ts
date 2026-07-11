@@ -1,7 +1,7 @@
 import { PDFDocument } from 'pdf-lib'
 import { FILE_LIMITS } from '@private-pdf/shared-types'
 import type { PdfInputFile, PdfOperationResult } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function mergePdfs(inputFiles: PdfInputFile[]): Promise<PdfOperationResult> {
   try {
@@ -42,6 +42,7 @@ export async function mergePdfs(inputFiles: PdfInputFile[]): Promise<PdfOperatio
     }
 
     const merged = await PDFDocument.create()
+    let totalPages = 0
 
     for (const file of inputFiles) {
       let src: PDFDocument
@@ -58,6 +59,9 @@ export async function mergePdfs(inputFiles: PdfInputFile[]): Promise<PdfOperatio
       }
 
       const pageCount = src.getPageCount()
+      totalPages += pageCount
+      const pageCountErr = validatePdfPageCount(totalPages)
+      if (pageCountErr) return { status: 'error', error: pageCountErr }
       if (pageCount === 0) {
         return {
           status: 'error',

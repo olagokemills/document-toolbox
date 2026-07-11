@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib'
 import type { PdfInputFile, PdfOperationResult, DeletePagesOptions } from '@private-pdf/shared-types'
-import { validatePdfInput } from './validate'
+import { validatePdfInput, validatePdfPageCount } from './validate'
 
 export async function deletePdfPages(
   inputFile: PdfInputFile,
@@ -26,10 +26,26 @@ export async function deletePdfPages(
     const totalPages = src.getPageCount()
     const toDelete = new Set(options.pagesToDelete)
 
+    const pageCountErr = validatePdfPageCount(totalPages)
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
+
     if (toDelete.size === 0) {
       return {
         status: 'error',
         error: { code: 'NO_PAGES_SELECTED', userMessage: 'Please select at least one page to delete.' },
+      }
+    }
+
+    const invalidPage = [...toDelete].find(
+      (page) => !Number.isInteger(page) || page < 1 || page > totalPages
+    )
+    if (invalidPage !== undefined) {
+      return {
+        status: 'error',
+        error: {
+          code: 'INVALID_PAGE_RANGE',
+          userMessage: `Page ${invalidPage} does not exist. This PDF has ${totalPages} page${totalPages === 1 ? '' : 's'}.`,
+        },
       }
     }
 

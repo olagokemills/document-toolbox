@@ -1,6 +1,6 @@
 import { PDFDocument } from 'pdf-lib'
 import type { PdfInputFile, PdfOperationResult, ExtractPagesOptions } from '@private-pdf/shared-types'
-import { validatePdfInput, validatePageRange } from './validate'
+import { validatePdfInput, validatePageRange, validatePdfPageCount } from './validate'
 
 export async function extractPdfPages(
   inputFile: PdfInputFile,
@@ -24,6 +24,8 @@ export async function extractPdfPages(
     }
 
     const totalPages = src.getPageCount()
+    const pageCountErr = validatePdfPageCount(totalPages)
+    if (pageCountErr) return { status: 'error', error: pageCountErr }
 
     if (options.ranges.length === 0) {
       return {

@@ -8,7 +8,7 @@ PDF tools that run entirely on your device. No uploads, no accounts, no internet
 
 ## What it does
 
-20+ PDF tools that work 100% locally:
+PDF and image tools that work 100% locally:
 
 | Category | Tools |
 |---|---|
@@ -16,6 +16,7 @@ PDF tools that run entirely on your device. No uploads, no accounts, no internet
 | Enhance | Watermark, Remove metadata, Lock, Unlock |
 | Convert to PDF | Word → PDF, Excel → PDF, PowerPoint → PDF, HTML → PDF, Images → PDF |
 | Convert from PDF | PDF → Word, PDF → Excel, PDF → PDF/A, PDF → Images, PDF → PowerPoint |
+| Image tools | Compress, Resize, Crop, Rotate/Flip, Convert, Remove metadata, Watermark, Blur/Pixelate, Meme maker, Adjust |
 
 ---
 
@@ -75,10 +76,21 @@ apps/
   local-web/        Next.js web app
   desktop/          Electron desktop app
 packages/
-  pdf-core/         All PDF processing logic (shared)
+  pdf-core/         Portable PDF validation and byte transformations
+  image-core/       Shared local JPG, PNG, and WebP processing
   shared-types/     TypeScript types and constants
 website/            Static download landing page (GitHub Pages)
 ```
+
+### Architecture boundary
+
+Runtime-independent PDF parsing, validation, and byte transformations live in `pdf-core` and are
+shared by both apps. Rendering that specifically requires browser Canvas, Puppeteer, or Electron's
+print engine stays in a narrow platform adapter. These adapters block external resource loading and
+must not duplicate portable transformations.
+
+The Electron renderer never receives raw filesystem paths or generic file read/write methods. Files
+selected by the user are represented by opaque handles and can only be used with named operations.
 
 ---
 
